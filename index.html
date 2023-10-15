@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Static HTML Page</title>
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h1>Data from Laravel API</h1>
+    <h2>Quiz App</h2>
+    <form id="formData">
+      <ul id="apiData" style="list-style: none">
+        <!-- API data will be displayed here -->
+      </ul>
+      <button type="button" id="btnsubmit">Submit Answers</button>
+    </form>
+
+    <script>
+      var form = document.getElementById("formData");
+      var btnsubmit = document.getElementById("btnsubmit");
+
+      $(document).ready(function () {
+        // Make a GET request to your Laravel API
+        var outerdiv = document.getElementById("apiData");
+        $.ajax({
+          url: "http://127.0.0.1:8000/api/questions", // Replace with your API endpoint
+          type: "GET",
+          dataType: "json",
+          success: function (data) {
+            // Handle the API response data here
+
+            data = data.questions; // Use data.questions directly
+            var i = 1;
+            for (var key in data) {
+              if (data.hasOwnProperty(key)) {
+                var question = data[key];
+
+                // Create the list item
+                var listItem = document.createElement("li");
+                listItem.innerHTML = key + ") " + question.question;
+                outerdiv.appendChild(listItem);
+
+                // Create the hidden input for the question
+                var questionInput = document.createElement("input");
+                questionInput.type = "hidden";
+                questionInput.name = "question[" + i + "]";
+                questionInput.value = question.question;
+                outerdiv.appendChild(questionInput);
+
+                // Options checkboxes
+                for (const element of question.options) {
+                  // Create the radio input for each option
+                  var optionInput = document.createElement("input");
+                  optionInput.type = "radio";
+                  optionInput.name = "question[" + i + "]";
+                  optionInput.value = element;
+
+                  // Create a label for the option
+                  var optionLabel = document.createElement("label");
+                  optionLabel.appendChild(optionInput);
+                  optionLabel.appendChild(document.createTextNode(element));
+
+                  // Add the option to the list
+                  outerdiv.appendChild(optionLabel);
+                }
+
+                // Add a line break
+                outerdiv.appendChild(document.createElement("br"));
+
+                i++;
+              }
+            }
+            btnsubmit.addEventListener("click", submitFormData);
+          },
+          error: function (error) {
+            // Handle errors here
+            console.error("Ajax error:", error);
+          },
+        });
+      });
+
+      function submitFormData() {
+        event.preventDefault();
+
+        var dataform = document.getElementsByName("question");
+        // console.log(dataform + `dataform`);
+
+        const formValues = getFormValuesAsArray("formData");
+        console.log(formValues);
+        // const formData = new FormData(form);
+        // console.log(formData.getAll("question")); // Corrected to retrieve values
+
+        fetch("http://127.0.0.1:8000/api/questions/check", {
+          method: "POST",
+          body: formValues,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Handle the response data
+            console.log(data);
+
+            alert(data.marks);
+          })
+          .catch((error) => {
+            // Handle any errors
+            console.error(error);
+          });
+      }
+
+      function getFormValuesAsArray(formId) {
+        const form = document.getElementById(formId);
+        const formData = new FormData(form);
+        const valuesArray = [];
+        let arraydata = [];
+
+        formData.forEach((value) => {
+          if (arraydata.length < 2) {
+            arraydata.push(value);
+          } else {
+            arraydata = [];
+          }
+
+          if (arraydata.length == 2) {
+            valuesArray.push(arraydata);
+          }
+        });
+
+        return valuesArray;
+      }
+    </script>
+  </body>
+</html>
